@@ -1,45 +1,66 @@
 import { useState, useEffect } from 'react'
 import CreateNewPerson from './componments/CreateNewPerson'
 import PhoneBookCheck from './componments/PhoneBookCheck'
-import PhoneBookFilter from './componments/PhoneBookFilter'
-import axios from 'axios'
-
+import Person from './componments/Person'
+import personsService from './services/persons'
+import RemovePersonConfirmation from './componments/RemovePersonCofirmation'
+import RemovePerson from './componments/RemovePerson'
 
 const App = () => {
   const [persons, setPersons] = useState([])
-
-  useEffect(() => {    
-    console.log('effect')    
-    axios      
-    .get('http://localhost:3001/persons')      
-    .then(response => {        
-      console.log('promise fulfilled')        
-      setPersons(response.data)      
-    })  
-  }, [])
-
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [nameSearch, setNameSearch] = useState('')
 
+  useEffect(() => {
+    personsService
+      .getAll()
+      .then(response => {
+        setPersons(response)
+      })
+  }, [])
 
   const searchPerson = (event) => {
     event.preventDefault()
     setNameSearch(event.target.value)
   }
-
   const handleNameChange = (event) => {
     setNewName(event.target.value)
   }
-
   const handleNumberChange = (event) => {
     setNewNumber(event.target.value)
   }
 
+  const removeButtons = (event) => {
+    event.preventDefault()
+    if (RemovePersonConfirmation(persons, event.target.value)) {
+      setPersons(RemovePerson(persons, event.target.value))
+      personsService
+        .removeEntry(event.target.value)
+    }
+  }
+
   const addPerson = (event) => {
     event.preventDefault()
-    if (PhoneBookCheck(persons, newName, newNumber)) {
-      setPersons(persons.concat(CreateNewPerson(persons, newName, newNumber)))
+    const { checkName, checkNumber } = PhoneBookCheck(persons, newName, newNumber)
+    if (!checkName && !checkNumber) {
+      personsService
+        .create(CreateNewPerson(newName, newNumber))
+        .then(returnedPerson => {
+          setPersons(persons.concat(returnedPerson))
+        })
+    } else if (checkName && !checkNumber) {
+      if (confirm(`${newName} is already in the phonebook, do you want to update their number?`)) {
+        const updatePerson = persons.find(person => person.name === newName)
+        const changedPerson = { ...updatePerson, number: newNumber }
+        personsService
+          .update(updatePerson.id, changedPerson)
+          .then(returnedPerson => {
+            setPersons(persons.map(person => person.name !== newName ? person : returnedPerson))
+          })
+      }
+    } else {
+      alert(`the number ${newNumber} is already in the phonebook`)
     }
     setNewName('')
     setNewNumber('')
@@ -75,9 +96,12 @@ const App = () => {
         </div>
       </form>
       <h2>Numbers</h2>
-      <div>
-        {PhoneBookFilter(persons, nameSearch)}
-      </div>
+      {persons.filter(person => person.name.toLowerCase().includes(nameSearch)).map(person =>
+        <div key={person.id}>
+          <Person person={person} />
+          <button type="button" onClick={removeButtons} value={person.id}>delete</button>
+        </div>
+      )}
     </div>
   )
 }

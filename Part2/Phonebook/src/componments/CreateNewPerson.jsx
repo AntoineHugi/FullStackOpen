@@ -1,12 +1,9 @@
-const CreateNewPerson = (persons, newName, newNumber) => {
+const CreateNewPerson = (newName, newNumber) => {
     const newPerson = {
         name: newName,
-        number: newNumber,
-        id: persons.length + 1
+        number: newNumber
     }
-    return (
-        newPerson
-    )
+    return (newPerson)
 }
 
 export default CreateNewPerson
