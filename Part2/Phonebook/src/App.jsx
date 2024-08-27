@@ -5,12 +5,14 @@ import Person from './componments/Person'
 import personsService from './services/persons'
 import RemovePersonConfirmation from './componments/RemovePersonCofirmation'
 import RemovePerson from './componments/RemovePerson'
+import Notification from './componments/Notification'
 
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [nameSearch, setNameSearch] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     personsService
@@ -18,7 +20,7 @@ const App = () => {
       .then(response => {
         setPersons(response)
       })
-  }, [])
+  },[errorMessage])
 
   const searchPerson = (event) => {
     event.preventDefault()
@@ -37,6 +39,10 @@ const App = () => {
       setPersons(RemovePerson(persons, event.target.value))
       personsService
         .removeEntry(event.target.value)
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+      setErrorMessage('Entry successfully removed')
     }
   }
 
@@ -48,6 +54,10 @@ const App = () => {
         .create(CreateNewPerson(newName, newNumber))
         .then(returnedPerson => {
           setPersons(persons.concat(returnedPerson))
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
+          setErrorMessage('This Person has been successfully added')
         })
     } else if (checkName && !checkNumber) {
       if (confirm(`${newName} is already in the phonebook, do you want to update their number?`)) {
@@ -58,9 +68,20 @@ const App = () => {
           .then(returnedPerson => {
             setPersons(persons.map(person => person.name !== newName ? person : returnedPerson))
           })
+          .catch(error => {
+            setTimeout(() => {
+              setErrorMessage(null)
+            }, 5000)
+            setErrorMessage(`Information on ${newName} was already removed from the server`)
+          })
+
       }
-    } else {
-      alert(`the number ${newNumber} is already in the phonebook`)
+    }
+    else {
+      setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000)
+      setErrorMessage('This number already exists in the Phonebook')
     }
     setNewName('')
     setNewNumber('')
@@ -69,6 +90,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={errorMessage} />
       <form>
         <div>search by name:
           <input
