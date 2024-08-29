@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import CreateNewPerson from './componments/CreateNewPerson'
-import PhoneBookCheck from './componments/PhoneBookCheck'
-import Person from './componments/Person'
+import CreateNewPerson from './components/CreateNewPerson'
+import PhoneBookCheck from './components/PhoneBookCheck'
+import Person from './components/Person'
 import personsService from './services/persons'
-import RemovePersonConfirmation from './componments/RemovePersonCofirmation'
-import RemovePerson from './componments/RemovePerson'
-import Notification from './componments/Notification'
+import RemovePersonConfirmation from './components/RemovePersonCofirmation'
+import RemovePerson from './components/RemovePerson'
+import Notification from './components/Notification'
 
 const App = () => {
   const [persons, setPersons] = useState([])
@@ -20,7 +20,7 @@ const App = () => {
       .then(response => {
         setPersons(response)
       })
-  },[errorMessage])
+  }, [errorMessage])
 
   const searchPerson = (event) => {
     event.preventDefault()
@@ -31,19 +31,6 @@ const App = () => {
   }
   const handleNumberChange = (event) => {
     setNewNumber(event.target.value)
-  }
-
-  const removeButtons = (event) => {
-    event.preventDefault()
-    if (RemovePersonConfirmation(persons, event.target.value)) {
-      setPersons(RemovePerson(persons, event.target.value))
-      personsService
-        .removeEntry(event.target.value)
-      setTimeout(() => {
-        setErrorMessage(null)
-      }, 5000)
-      setErrorMessage('Entry successfully removed')
-    }
   }
 
   const addPerson = (event) => {
@@ -80,12 +67,21 @@ const App = () => {
     else {
       setTimeout(() => {
         setErrorMessage(null)
-      }, 5000)
+      }, 3000)
       setErrorMessage('This number already exists in the Phonebook')
     }
     setNewName('')
     setNewNumber('')
   }
+  const removePersonButton = id => {
+    console.log('button pressed', persons)
+    if (RemovePersonConfirmation(persons, id)){
+      setPersons(RemovePerson(persons, id))
+      personsService
+        .removeEntry(id)
+    }
+  }
+
 
   return (
     <div>
@@ -118,11 +114,12 @@ const App = () => {
         </div>
       </form>
       <h2>Numbers</h2>
-      {persons.filter(person => person.name.toLowerCase().includes(nameSearch)).map(person =>
-        <div key={person.id}>
-          <Person person={person} />
-          <button type="button" onClick={removeButtons} value={person.id}>delete</button>
-        </div>
+      {persons.filter(person => person.name.toLowerCase().includes(nameSearch.toLowerCase())).map(person =>
+        <Person 
+          key={person.id} 
+          person={person} 
+          removeButtons={()=>removePersonButton(person.id)} 
+        />
       )}
     </div>
   )
